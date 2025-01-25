@@ -4,28 +4,29 @@ const bodyParser = require("body-parser");
 const createError = require('http-error');
 const xssClean = require('xss-clean')
 const rateLimit = require('express-rate-limit');
+const userRouter = require("./router/userRouter");
 const app = express();
 
-const rateLimit = rateLimit({
+const Limit = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
     max: 5,
     message: 'Too many requests from this IP, please try again later.',
 });
 
-app.use(rateLimit);
+app.use(Limit);
 app.use(xssClean());
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+
+app.use("/api/user" , userRouter);
+
 app.get("/test", (req, res) => {
     res.status(200).send({
-
-        message: 'Api Working Fine'
+    message: 'Api Working Fine',
     });
-
 });
-
 
 // clain error handle
 app.use((req, res, next) => {
