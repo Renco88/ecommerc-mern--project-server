@@ -6,6 +6,7 @@ const xssClean = require('xss-clean')
 const rateLimit = require('express-rate-limit');
 const userRouter = require("./router/userRouter");
 const seedRouter = require("./router/seedRouter");
+const { errorResponse } = require("./controllers/responseHandler");
 const app = express();
 
 const Limit = rateLimit({
@@ -21,12 +22,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
-app.use("/api/user" , userRouter);
-app.use("/api/seed" , seedRouter);
+app.use("/api/user", userRouter);
+app.use("/api/seed", seedRouter);
 
 app.get("/test", (req, res) => {
     res.status(200).send({
-    message: 'Api Working Fine',
+        message: 'Api Working Fine',
     });
 });
 
@@ -37,9 +38,9 @@ app.use((req, res, next) => {
 });
 // server error handle
 app.use((err, req, res, next) => {
-    return res.status(err.status || 500).json({
-        success: false,
-        message: err.message,
+    return errorResponse(res, {
+        statusCode: err.status,
+        message: err.message
     });
 });
 
