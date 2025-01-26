@@ -1,8 +1,10 @@
 const createError = require('http-errors');
+const fs = require('fs').promises;
 const User = require("../models/userModel");
 const { successResponse } = require('./responseHandler');
-const mongoose = require('mongoose');
-const findUserById = require('../services/findUserByID');
+const { findWithId } = require('../services/findItem');
+const { deleteImage } = require('../helper/deleteUser');
+
 
 
 const getUsers = async (req, res, next) => {
@@ -28,7 +30,7 @@ const getUsers = async (req, res, next) => {
       .limit(limit)
       .skip((page - 1) * limit);
     const count = await User.find(filter).countDocuments();
-    if (!users) throw createError(404, 'no user found')
+    if (!users) throw createError(404, 'no user found');
 
     return successResponse(res, {
       statusCode: 200,
@@ -48,10 +50,11 @@ const getUsers = async (req, res, next) => {
     next(error)
   }
 };
-const getUser = async (req, res, next) => {
+const getUserById = async (req, res, next) => {
   try {
     const id = req.params.id;
-    const user =await findUserById(id);
+    const opction = { password: 0 };
+    const user = await findWithId(User, id, opction);
     return successResponse(res, {
       statusCode: 200,
       message: 'user were returened successfully',
@@ -61,5 +64,49 @@ const getUser = async (req, res, next) => {
     next(error)
   }
 };
+const deleteUserById = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const opction = { password: 0 };
+    const user = await findWithId(User, id, opction);
 
-module.exports = { getUsers, getUser };
+    const userImagePath = User.image;
+    deleteImage(userImagePath);
+
+    await User.findOneAndDelete({
+      _id: id,
+      isAdmin: false,
+    });
+
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: 'user was delete successfully',
+    });
+  } catch (error) {
+    next(error)
+  }
+};
+const processRegister = async (req, res, next) => {
+  try {
+    const { name, email, password, phone, address } = req.body;
+    const userExists = await User.exists({email:email});
+    if(userExists){
+      throw createError(409, 'user with this email already exist , please login')
+    }
+    const newUser = {
+      name, email, password, phone, address
+    }
+
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: 'user was create successfully',
+      payload: { newUser },
+    });
+  } catch (error) {
+    next(error)
+  }
+};
+
+module.exports = { getUsers, getUserById, deleteUserById, processRegister };
