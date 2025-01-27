@@ -93,14 +93,17 @@ const deleteUserById = async (req, res, next) => {
 };
 const processRegister = async (req, res, next) => {
   try {
-    const { name, email, password, phone, address,image } = req.body;
+    const { name, email, password, phone, address } = req.body;
+
+    const imageBufferString = req.file.buffer.toString('base64');
+
     const userExists = await User.exists({ email: email });
     if (userExists) {
       throw createError(409, 'user with this email already exist , please login')
     }
 
     //https://security.google.com/settings/security/apppasswords
-    const token = createJSONWebToken({ name, email, password, phone, address,image }, jwtActivationKew, '10m');
+    const token = createJSONWebToken({ name, email, password, phone, address,image:imageBufferString }, jwtActivationKew, '10m');
 
     const emailData = {
       email,

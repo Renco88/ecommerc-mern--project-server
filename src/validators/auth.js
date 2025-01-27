@@ -41,9 +41,14 @@ const validateUserRegistration =[
     .withMessage("phone should be at least 3 characters long"),
 
     body("image")
-    .trim()
-    .optional()
-    .isString()
+    .custom((value,{req})=>{
+        if(!req.file || !req.file.buffer){
+            throw new Error('user image is required');
+        }
+        return true;
+    })
+    .withMessage('user image is required'),
+ 
 ];
 
 
