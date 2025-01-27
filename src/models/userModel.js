@@ -1,5 +1,6 @@
 const {Schema,mongoose} = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { UPLOAD_USER_IMG_DIRECTORY } = require('../config');
 
 const userSchema = new Schema({
     name:{
@@ -31,11 +32,18 @@ const userSchema = new Schema({
     },
     image:{
         type:String,
+        default:UPLOAD_USER_IMG_DIRECTORY,
         
     },
     address:{
         type:String,
         require:[true,'user address is required'],
+        minlength: [3, 'Password must be at least 3 characters long'],
+    },
+    phone:{
+        type:String,
+        require:[true,'Phone address is required'],
+
     },
     isAdmin:{
         type:Boolean,

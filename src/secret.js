@@ -9,11 +9,13 @@ const smtpPassword =process.env.SMTP_PASSWORD||'';
 const cliendUrl =process.env.CLIEND_URL||'';
 
 
+
 module.exports={
     serverPort,
     mongoDB,
     jwtActivationKew,
     smtpUsername,
     smtpPassword,
-    cliendUrl
+    cliendUrl,
+   
 }
