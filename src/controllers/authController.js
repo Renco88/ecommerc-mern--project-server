@@ -31,7 +31,7 @@ const handleLogin = async (req, res, next) => {
         }
 
         // Generate JWT token
-        const accessToken = createJSONWebToken({ id: user._id, email: user.email }, jwtAccessKew, '10m');
+        const accessToken = createJSONWebToken({ user,id: user._id, email: user.email }, jwtAccessKew, '15m');
         res.cookie('access_token', accessToken, {
             maxAge: 15 * 60 * 1000,
             httpOnly: true,
