@@ -96,14 +96,14 @@ const deleteUserById = async (req, res, next) => {
 const processRegister = async (req, res, next) => {
   try {
     const { name, email, password, phone, address } = req.body;
-    const image =req.file;
-    if(!image){
-      throw createError(400,'Image file is required');
+    const image = req.file;
+    if (!image) {
+      throw createError(400, 'Image file is required');
     }
-    if(image.size > 1024 * 1024 *2){
-      throw createError(400,'Image file is too large.it must be less than 2 MB');
+    if (image.size > 1024 * 1024 * 2) {
+      throw createError(400, 'Image file is too large.it must be less than 2 MB');
     }
- 
+
 
     const imageBufferString = image.buffer.toString('base64');
 
@@ -113,7 +113,7 @@ const processRegister = async (req, res, next) => {
     }
 
     //https://security.google.com/settings/security/apppasswords
-    const token = createJSONWebToken({ name, email, password, phone, address,image:imageBufferString }, jwtActivationKew, '10m');
+    const token = createJSONWebToken({ name, email, password, phone, address, image: imageBufferString }, jwtActivationKew, '10m');
 
     const emailData = {
       email,
@@ -142,7 +142,11 @@ const processRegister = async (req, res, next) => {
 };
 const activeUserAccount = async (req, res, next) => {
   try {
-    const token = req.query.token;
+    const token =
+      req.query.token ||
+      req.body.token ||
+      req.cookies.token;
+
     if (!token) throw createError(404, 'Token not found');
     try {
       const decoded = jwt.verify(token, jwtActivationKew);
@@ -152,7 +156,7 @@ const activeUserAccount = async (req, res, next) => {
       if (userExists) {
         throw createError(409, 'user with this email already exist , please login')
       }
-  
+
       await User.create(decoded);
       return successResponse(res, {
         statusCode: 201,
@@ -174,45 +178,73 @@ const activeUserAccount = async (req, res, next) => {
 const updateUserById = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const options ={password:0};
-    await findWithId(User,userId,options);
+    const options = { password: 0 };
+    await findWithId(User, userId, options);
 
-    const updateOpction = { new:true, runValidatiors:true,Context:'query' };
-    
-    let update ={};
-    for(let key in req.body){
-      if(['name','password','phone','address'].includes(key)){
-        update[key]=req.body[key];
+    const updateOpction = { new: true, runValidatiors: true, Context: 'query' };
+
+    let update = {};
+    for (let key in req.body) {
+      if (['name', 'password', 'phone', 'address'].includes(key)) {
+        update[key] = req.body[key];
       }
-     else if(['email'].includes(key)){
-      throw createError(400,'Email Can not be update');
+      else if (['email'].includes(key)) {
+        throw createError(400, 'Email Can not be update');
       }
-     
+
     }
 
-    const image =req?.file;
-    if(image){
-      if(image.size > 1024 * 1024 *2){
-        throw createError(400,'Image file is too large.it must be less than 2 MB');
+    const image = req?.file;
+    if (image) {
+      if (image.size > 1024 * 1024 * 2) {
+        throw createError(400, 'Image file is too large.it must be less than 2 MB');
       }
       update.image = image.buffer.toString('base64');
     }
 
-    const updateUser = await User.findByIdAndUpdate(userId,update,updateOpction).select("-password");
+    const updateUser = await User.findByIdAndUpdate(userId, update, updateOpction).select("-password");
 
-    if(!updateUser){
-      throw createError(404,'User With This Id does not exist');
+    if (!updateUser) {
+      throw createError(404, 'User With This Id does not exist');
 
     }
 
     return successResponse(res, {
       statusCode: 200,
       message: 'user was updated successfully',
-      payload:{updateUser},
+      payload: { updateUser },
     });
   } catch (error) {
     next(error)
   }
 };
+const handleBanUserById = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const user = await findWithId(User, userId); // Fetch the user
 
-module.exports = { getUsers, getUserById, deleteUserById, processRegister, activeUserAccount, updateUserById };
+    // Check if the user is already banned
+    if (user.isBanned) {
+      throw createError(400, 'User is already banned');
+    }
+
+    // Corrected options
+    const updateOptions = { new: true, runValidators: true };
+
+    const updateUser = await User.findByIdAndUpdate(userId, { isBanned: true }, updateOptions).select('-password');
+
+    if (!updateUser) {
+      throw createError(400, 'User was not banned successfully');
+    }
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: 'User was banned successfully',
+      payload: { updateUser },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getUsers, getUserById, deleteUserById, processRegister, activeUserAccount, updateUserById, handleBanUserById };
